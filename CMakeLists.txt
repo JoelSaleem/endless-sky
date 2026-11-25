@@ -78,13 +78,16 @@ if(ES_USE_SDL3)
 	find_package(SDL3 REQUIRED CONFIG REQUIRED COMPONENTS SDL3)
 	set(SDL_LIBRARIES ${SDL3_LIBRARIES})
 else()
-	find_package(SDL2 CONFIG REQUIRED)
+	# On Android the in-tree SDL (add_subdirectory) already defines this target.
+	if(NOT TARGET SDL2::SDL2)
+		find_package(SDL2 CONFIG REQUIRED)
+	endif()
 	set(SDL_LIBRARIES SDL2::SDL2)
 endif()
 find_package(PNG REQUIRED)
 find_package(JPEG REQUIRED)
 find_package(libavif REQUIRED)
-if(NOT APPLE)
+if(NOT APPLE AND NOT ES_GLES)
 	find_package(GLEW REQUIRED)
 endif()
 
@@ -126,8 +129,9 @@ if(APPLE AND ES_USE_SYSTEM_LIBRARIES)
 	pkg_check_modules(minizip REQUIRED IMPORTED_TARGET minizip)
 	add_library(Minizip::Minizip ALIAS PkgConfig::minizip)
 	set(MINIZIP_LIBRARIES "Minizip::Minizip")
-elseif(ES_USE_VCPKG)
-	# Minizip has a different target name in vcpkg.
+elseif(ES_USE_VCPKG OR ANDROID)
+	# Minizip has a different target name in vcpkg (used for Android too, which gets
+	# its deps from vcpkg; this target carries the full path + zlib dependency).
 	find_package(unofficial-minizip CONFIG REQUIRED)
 	set(MINIZIP_LIBRARIES "unofficial::minizip::minizip")
 else()
@@ -168,7 +172,7 @@ add_library(ExternalLibraries INTERFACE)
 target_link_libraries(EndlessSkyLib PUBLIC ExternalLibraries)
 
 # Enable sanitizers on debug builds, depending on platform support.
-if(NOT WIN32 AND NOT CYGWIN)
+if(NOT WIN32 AND NOT CYGWIN AND NOT ANDROID)
 	set(SANITIZER_OPTS "-g" "-fsanitize=address,undefined,pointer-compare,pointer-subtract,unreachable,builtin,integer-divide-by-zero,vla-bound,null,return,signed-integer-overflow,bounds,alignment,bool,enum,pointer-overflow")
 	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 		list(APPEND SANITIZER_OPTS "-fno-omit-frame-pointer" "-fsanitize=leak,vptr")
@@ -193,6 +197,8 @@ target_link_libraries(ExternalLibraries INTERFACE ${SDL_LIBRARIES} PNG::PNG JPEG
 # Link the needed OS-specific dependencies, if any.
 if(WIN32)
 	target_link_libraries(ExternalLibraries INTERFACE rpcrt4 winmm ntdll psapi)
+elseif(ANDROID)
+	# bionic libc provides pthread; there is no separate -lpthread to link.
 elseif(ES_LINK_LIBATOMIC)
 	target_link_libraries(ExternalLibraries INTERFACE pthread atomic)
 else()
@@ -206,6 +212,9 @@ if(UNIX)
 		find_path(UUID_INCLUDE uuid/uuid.h /usr/local/include /usr/include)
 		target_link_libraries(ExternalLibraries INTERFACE "${UUID_LIB}")
 		target_include_directories(ExternalLibraries INTERFACE "${UUID_INCLUDE}")
+	elseif(ANDROID)
+		# Android uses a header-only libuuid shim (android/app/jni/compat/uuid/uuid.h);
+		# nothing to link.
 	elseif(NOT ES_USE_VCPKG OR ES_USE_SYSTEM_LIBRARIES)
 		find_library(UUID_LIB uuid)
 		target_link_libraries(ExternalLibraries INTERFACE "${UUID_LIB}")
@@ -217,8 +226,13 @@ endif()
 
 # Link with OpenGL or OpenGL ES.
 if(ES_GLES)
-	find_package(OpenGL REQUIRED OpenGL EGL)
-	target_link_libraries(ExternalLibraries INTERFACE OpenGL::OpenGL OpenGL::EGL)
+	if(ANDROID)
+		# Android provides GLES3/EGL as NDK system libraries (no GLVND/find_package).
+		target_link_libraries(ExternalLibraries INTERFACE GLESv3 EGL)
+	else()
+		find_package(OpenGL REQUIRED OpenGL EGL)
+		target_link_libraries(ExternalLibraries INTERFACE OpenGL::OpenGL OpenGL::EGL)
+	endif()
 	target_compile_definitions(EndlessSkyLib PUBLIC ES_GLES)
 else()
 	# The Steam runtime can't rely on GLVND being available, so link against the legacy interface.
@@ -250,7 +264,13 @@ if(BUILD_TESTING)
 endif()
 
 # Create game target.
-if(APPLE AND ES_CREATE_BUNDLE)
+if(ANDROID)
+	# Android: SDLActivity loads libmain.so, whose SDL_main (source/main.cpp) is
+	# the game entry point. No desktop executable or install rules apply; Gradle
+	# packages the shared library (and its SDL2 dependency) into the APK.
+	add_library(EndlessSky SHARED source/main.cpp)
+	set_target_properties(EndlessSky PROPERTIES OUTPUT_NAME "main")
+elseif(APPLE AND ES_CREATE_BUNDLE)
 	add_executable(EndlessSky MACOSX_BUNDLE source/main.cpp)
 
 	# MacOS bundles are a bit special and need every resource specified when

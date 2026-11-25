@@ -94,9 +94,20 @@ void PrintTestsTable();
 
 
 
+#ifdef __ANDROID__
+// On Android, SDL renames main -> SDL_main (SDLActivity's JNI entry calls it),
+// and we set input hints below, so pull in the full SDL header.
+#include <SDL.h>
+#endif
+
 // Entry point for the EndlessSky executable
 int main(int argc, char *argv[])
 {
+#ifdef __ANDROID__
+	// Treat taps as mouse clicks so the existing click-driven UI works on touch.
+	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
+	SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
+#endif
 #ifdef _WIN32
 	WinVersion::Init();
 	// Handle command-line arguments

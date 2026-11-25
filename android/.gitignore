@@ -1,0 +1,12 @@
+# Vendored SDL2 source (fetch via scripts; too large to commit)
+/app/jni/SDL/
+
+# Gradle / build outputs
+/.gradle/
+/build/
+/app/build/
+/app/.cxx/
+/app/libs/
+
+# Local machine config
+/local.properties

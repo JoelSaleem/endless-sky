@@ -111,6 +111,14 @@ void Files::Init(const char *const *argv)
 
 	if(resources.empty())
 	{
+#ifdef __ANDROID__
+		// On Android the game data is pushed to the app's external files dir
+		// (see android/scripts/push-assets.sh); SDL_GetBasePath isn't usable here.
+		const char *androidRoot = SDL_AndroidGetExternalStoragePath();
+		if(!androidRoot)
+			throw runtime_error("Unable to get Android external storage path!");
+		char *basePath = SDL_strdup((filesystem::path(androidRoot) / "assets").string().c_str());
+#else
 		// Find the path to the resource directory. This will depend on the
 		// operating system, and can be overridden by a command line argument.
 #ifdef ES_USE_SDL3
@@ -118,6 +126,7 @@ void Files::Init(const char *const *argv)
 		const char *basePath = SDL_GetBasePath();
 #else
 		char *basePath = SDL_GetBasePath();
+#endif
 #endif
 		if(!basePath)
 			throw runtime_error("Unable to get path to resource directory!");
