@@ -257,6 +257,15 @@ int main(int argc, char *argv[])
 		if(!GameWindow::Init(isTesting && !debugMode))
 			return 1;
 
+#ifdef __ANDROID__
+		// First-pass touch UX: the desktop-scale UI is tiny on a phone screen.
+		// Bump the default UI zoom unless the player has already chosen their own.
+		// noEvent=true: custom SDL events aren't registered this early (matches the
+		// startup SetZoom call in Preferences::Load).
+		if(Screen::UserZoom() <= 100)
+			Screen::SetZoom(200, true);
+#endif
+
 		GameData::LoadSettings();
 
 #ifdef _WIN32
