@@ -79,6 +79,24 @@ bool UI::Handle(const SDL_Event &event)
 		}
 		else if(event.type == SDL_MOUSEWHEEL)
 			handled = (*it)->DoScroll(event.wheel.x, event.wheel.y);
+#ifndef ES_USE_SDL3
+		else if(event.type == SDL_MULTIGESTURE)
+		{
+			// Pinch-to-zoom (touch): accumulate the pinch-distance delta and feed
+			// it to the scroll/zoom handler as mouse-wheel-style steps. Fingers
+			// apart (positive) zooms in, matching a wheel-up.
+			// ponytail: static accumulator — fine for one active gesture at a time.
+			static double pinchAccum = 0.;
+			constexpr double PINCH_STEP = 0.02; // tune: smaller = more sensitive
+			pinchAccum += event.mgesture.dDist;
+			int steps = static_cast<int>(pinchAccum / PINCH_STEP);
+			if(steps)
+			{
+				pinchAccum -= steps * PINCH_STEP;
+				handled = (*it)->DoScroll(0., steps);
+			}
+		}
+#endif
 		else if(event.type == SDL_KEYDOWN)
 		{
 #ifdef ES_USE_SDL3
