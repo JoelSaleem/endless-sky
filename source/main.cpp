@@ -107,6 +107,8 @@ int main(int argc, char *argv[])
 	// Treat taps as mouse clicks so the existing click-driven UI works on touch.
 	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
 	SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
+	// Endless Sky is a landscape game; lock it (SDL otherwise picks portrait on phones).
+	SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
 #endif
 #ifdef _WIN32
 	WinVersion::Init();
