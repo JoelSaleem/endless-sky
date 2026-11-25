@@ -22,6 +22,8 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 #include "DialogPanel.h"
 #include "text/Format.h"
 #include "GameData.h"
+#include "Information.h"
+#include "Interface.h"
 #include "Government.h"
 #include "HailPanel.h"
 #include "shader/LineShader.h"
@@ -160,6 +162,12 @@ void MainPanel::Draw()
 
 	engine.Draw();
 
+#ifdef __ANDROID__
+	// On-screen touch controls (Map/Land/Jump) overlaid on the flight view, drawn
+	// with this panel so the buttons register as clickable zones.
+	GameData::Interfaces().Get("touch controls")->Draw(Information(), this);
+#endif
+
 	if(isDragging)
 	{
 		if(canDrag)
@@ -221,8 +229,16 @@ bool MainPanel::KeyDown(SDL_Keycode key, Uint16 mod, const Command &command, boo
 	if(player.IsDead())
 		return true;
 
-	if(command.Has(Command::MAP | Command::INFO | Command::MESSAGE_LOG | Command::HAIL | Command::HELP))
-		show = command;
+	// On-screen touch buttons pass an empty command plus the raw key; rebuild the
+	// command so the handling below behaves like a physical keypress.
+	Command derived = command ? command : Command(key);
+
+	if(derived.Has(Command::MAP | Command::INFO | Command::MESSAGE_LOG | Command::HAIL | Command::HELP))
+		show = derived;
+	else if(!command && derived.Has(Command::LAND | Command::JUMP))
+		// Flight commands are read from the keyboard by the Engine; an on-screen
+		// button holds no key, so inject it directly for this frame.
+		engine.GiveCommand(derived);
 	else if(command.Has(Command::TURRET_TRACKING))
 	{
 		bool newValue = Preferences::Toggle(Preferences::TURRETS_FOCUS_FIRE);

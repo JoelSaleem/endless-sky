@@ -1196,6 +1196,25 @@ interface "gamerules presets"
 
 
 
+interface "touch controls"
+	anchor bottom right
+	sprite "ui/wide button"
+		center -80 -150
+	button m "_Map"
+		center -80 -150
+		dimensions 120 44
+	sprite "ui/wide button"
+		center -80 -100
+	button l "_Land"
+		center -80 -100
+		dimensions 120 44
+	sprite "ui/wide button"
+		center -80 -50
+	button j "_Jump"
+		center -80 -50
+		dimensions 120 44
+
+
 interface "hud"
 	# Player status.
 	anchor top right
