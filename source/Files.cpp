@@ -112,11 +112,13 @@ void Files::Init(const char *const *argv)
 	if(resources.empty())
 	{
 #ifdef __ANDROID__
-		// On Android the game data is pushed to the app's external files dir
-		// (see android/scripts/push-assets.sh); SDL_GetBasePath isn't usable here.
-		const char *androidRoot = SDL_AndroidGetExternalStoragePath();
+		// On Android the game data is streamed into the app's INTERNAL files dir
+		// (see android/scripts/push-assets.sh). Internal storage is app-owned with
+		// normal POSIX permissions; the external dir has scoped-storage ownership
+		// that blocks the app from reading adb-pushed files. SDL_GetBasePath isn't usable here.
+		const char *androidRoot = SDL_AndroidGetInternalStoragePath();
 		if(!androidRoot)
-			throw runtime_error("Unable to get Android external storage path!");
+			throw runtime_error("Unable to get Android internal storage path!");
 		char *basePath = SDL_strdup((filesystem::path(androidRoot) / "assets").string().c_str());
 #else
 		// Find the path to the resource directory. This will depend on the
