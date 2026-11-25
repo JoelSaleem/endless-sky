@@ -91,4 +91,6 @@ private:
 	bool hasControl = false;
 	bool canClick = false;
 	bool canDrag = false;
+	// Android: true while a finger is held in the flight view, to thrust toward it.
+	bool thrustHeld = false;
 };

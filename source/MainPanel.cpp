@@ -126,6 +126,14 @@ void MainPanel::Step()
 	if(isActive)
 		isActive = !ShowHelp(false);
 
+#ifdef __ANDROID__
+	// Touch piloting: while a finger is held in the flight view, thrust toward it.
+	// Mouse control already turns the flagship toward the touch point but gives no
+	// thrust (no keyboard), so inject the forward command each frame it's held.
+	if(isActive && thrustHeld)
+		engine.GiveCommand(Command::FORWARD);
+#endif
+
 	engine.Step(isActive);
 
 	if(isActive && !engine.IsPaused())
@@ -150,7 +158,10 @@ void MainPanel::Step()
 		engine.Go();
 	}
 	else
+	{
 		canDrag = false;
+		thrustHeld = false;
+	}
 	canClick = isActive;
 }
 
@@ -289,6 +300,11 @@ bool MainPanel::Click(int x, int y, MouseButton button, int clicks)
 		return true;
 	// Only allow drags that start when clicking was possible.
 	canDrag = true;
+#ifdef __ANDROID__
+	// A press that reaches the flight view (an on-screen button would have consumed
+	// it as a zone) means "fly toward here": hold to thrust until the finger lifts.
+	thrustHeld = true;
+#endif
 
 	dragSource = Point(x, y);
 	dragPoint = dragSource;
@@ -320,6 +336,11 @@ bool MainPanel::Release(int x, int y, MouseButton button)
 {
 	if(button != MouseButton::LEFT)
 		return false;
+
+#ifdef __ANDROID__
+	// Finger lifted: stop thrusting (see Click/Step).
+	thrustHeld = false;
+#endif
 
 	if(isDragging)
 	{
