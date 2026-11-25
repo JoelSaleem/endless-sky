@@ -298,7 +298,13 @@ void Preferences::Init()
 	settings[MAP_PARENTHESIZE_PROFIT] = Setting::OnOff("Parenthesize trade profits", false);
 	settings[MINIMAP_DISPLAY] = Setting::List("Show mini-map", {"off", "when jumping", "always on"}, 1);
 	settings[MOTION_BLUR] = Setting::OnOff("Render motion blur", true);
+#ifdef __ANDROID__
+	// Touch-to-fly: default ON so the flagship turns + fires toward the finger
+	// (via touch->mouse). The default keybindings are keyboard keys, unusable on touch.
+	settings[MOUSE_CONTROL_FLAGSHIP] = Setting::OnOff("Control ship with mouse", true);
+#else
 	settings[MOUSE_CONTROL_FLAGSHIP] = Setting::OnOff("Control ship with mouse", false);
+#endif
 	settings[MOUSE_CONTROL_TURRETS] = Setting::OnOff("Aim turrets with mouse", false);
 	settings[PARALLAX] = Setting::List("Parallax background", {"off", "fancy", "fast"}, 2);
 	// "Previous saves" is unique and not rendered in PreferencesPanel, and so it doesn't need a Setting.
