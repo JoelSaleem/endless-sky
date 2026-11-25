@@ -34,7 +34,35 @@ android {
     }
 
     lint { abortOnError false }
+
+    // Bundled game assets live under build/gameassets (populated by bundleGameAssets).
+    sourceSets {
+        main { assets.srcDirs += ["${buildDir}/gameassets"] }
+    }
 }
+
+// Copy the game resources into the APK (under assets/es/) and generate a filelist
+// so the native code can extract them to internal storage on first run
+// (see ExtractAndroidAssets in source/Files.cpp). Makes the APK self-contained.
+tasks.register('bundleGameAssets', Copy) {
+    def root = file("${projectDir}/../..")
+    into "${buildDir}/gameassets/es"
+    from("${root}/data") { into 'data' }
+    from("${root}/images") { into 'images' }
+    from("${root}/sounds") { into 'sounds' }
+    from("${root}/shaders") { into 'shaders' }
+    from(root) { include 'credits.txt', 'keys.txt' }
+    doLast {
+        def base = file("${buildDir}/gameassets/es")
+        def sb = new StringBuilder()
+        base.eachFileRecurse { f ->
+            if(f.isFile() && f.name != 'filelist.txt')
+                sb.append(base.toPath().relativize(f.toPath()).toString().replace('\\', '/')).append('\n')
+        }
+        new File(base, 'filelist.txt').text = sb.toString()
+    }
+}
+preBuild.dependsOn bundleGameAssets
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')

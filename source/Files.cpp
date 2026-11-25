@@ -95,6 +95,59 @@ namespace {
 
 
 
+#ifdef __ANDROID__
+namespace {
+	// On first run, extract the APK's bundled game assets (packed under assets/es/
+	// by android/app/build.gradle) to internal storage. Endless Sky reads data via
+	// std::filesystem and cannot read files packed inside the APK, so they must be
+	// unpacked to a real directory once.
+	void ExtractAndroidAssets(const filesystem::path &dest)
+	{
+		if(filesystem::exists(dest / "credits.txt"))
+			return; // Already extracted (or dev-pushed).
+		SDL_RWops *listFile = SDL_RWFromFile("es/filelist.txt", "rb");
+		if(!listFile)
+		{
+			Logger::Log("Android: es/filelist.txt not found in APK assets.", Logger::Level::ERROR);
+			return;
+		}
+		Sint64 listSize = SDL_RWsize(listFile);
+		string listText(max<Sint64>(0, listSize), '\0');
+		if(listSize > 0)
+			SDL_RWread(listFile, listText.data(), 1, listSize);
+		SDL_RWclose(listFile);
+
+		istringstream lines(listText);
+		string rel;
+		int count = 0;
+		while(getline(lines, rel))
+		{
+			if(!rel.empty() && rel.back() == '\r')
+				rel.pop_back();
+			if(rel.empty())
+				continue;
+			SDL_RWops *src = SDL_RWFromFile(("es/" + rel).c_str(), "rb");
+			if(!src)
+				continue;
+			filesystem::path out = dest / rel;
+			error_code ec;
+			filesystem::create_directories(out.parent_path(), ec);
+			Sint64 n = SDL_RWsize(src);
+			string data(max<Sint64>(0, n), '\0');
+			if(n > 0)
+				SDL_RWread(src, data.data(), 1, n);
+			SDL_RWclose(src);
+			ofstream(out, ios::binary).write(data.data(), data.size());
+			++count;
+		}
+		Logger::Log("Android: extracted " + to_string(count) + " asset files to internal storage.",
+			Logger::Level::INFO);
+	}
+}
+#endif
+
+
+
 void Files::Init(const char *const *argv)
 {
 	// Parse the command line arguments to see if the user has specified
@@ -112,14 +165,16 @@ void Files::Init(const char *const *argv)
 	if(resources.empty())
 	{
 #ifdef __ANDROID__
-		// On Android the game data is streamed into the app's INTERNAL files dir
-		// (see android/scripts/push-assets.sh). Internal storage is app-owned with
-		// normal POSIX permissions; the external dir has scoped-storage ownership
-		// that blocks the app from reading adb-pushed files. SDL_GetBasePath isn't usable here.
+		// On Android the game data lives in the app's INTERNAL files dir: extracted
+		// from the APK on first run (ExtractAndroidAssets), or adb-pushed for dev
+		// (android/scripts/push-assets.sh). Internal storage is app-owned with normal
+		// POSIX permissions (std::filesystem works); SDL_GetBasePath isn't usable here.
 		const char *androidRoot = SDL_AndroidGetInternalStoragePath();
 		if(!androidRoot)
 			throw runtime_error("Unable to get Android internal storage path!");
-		char *basePath = SDL_strdup((filesystem::path(androidRoot) / "assets").string().c_str());
+		filesystem::path androidAssets = filesystem::path(androidRoot) / "assets";
+		ExtractAndroidAssets(androidAssets);
+		char *basePath = SDL_strdup(androidAssets.string().c_str());
 #else
 		// Find the path to the resource directory. This will depend on the
 		// operating system, and can be overridden by a command line argument.
