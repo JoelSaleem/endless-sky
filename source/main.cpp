@@ -98,6 +98,27 @@ void PrintTestsTable();
 // On Android, SDL renames main -> SDL_main (SDLActivity's JNI entry calls it),
 // and we set input hints below, so pull in the full SDL header.
 #include <SDL.h>
+#include <jni.h>
+
+namespace {
+	// Remove the Java loading overlay (MainActivity.hideSplash) once the first real
+	// frame is drawn. The overlay covers native init + first-run asset extraction,
+	// which both happen before any OpenGL context exists (so they can't be drawn by
+	// the engine's own loading panel).
+	void HideAndroidSplash()
+	{
+		JNIEnv *env = static_cast<JNIEnv *>(SDL_AndroidGetJNIEnv());
+		jobject activity = static_cast<jobject>(SDL_AndroidGetActivity());
+		if(!env || !activity)
+			return;
+		jclass cls = env->GetObjectClass(activity);
+		jmethodID method = env->GetStaticMethodID(cls, "hideSplash", "()V");
+		if(method)
+			env->CallStaticVoidMethod(cls, method);
+		env->DeleteLocalRef(cls);
+		env->DeleteLocalRef(activity);
+	}
+}
 #endif
 
 // Entry point for the EndlessSky executable
@@ -616,6 +637,16 @@ void GameLoop(PlayerInfo &player, TaskQueue &queue, const Conversation &conversa
 			}
 
 			GameWindow::Step();
+
+#ifdef __ANDROID__
+			// First real frame is on screen (loading panel or menu); drop the overlay.
+			static bool splashHidden = false;
+			if(!splashHidden)
+			{
+				HideAndroidSplash();
+				splashHidden = true;
+			}
+#endif
 
 			// Lock the game loop to 60 FPS.
 			timer.Wait();

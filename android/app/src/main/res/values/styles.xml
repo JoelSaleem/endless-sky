@@ -2,6 +2,8 @@
 <resources>
     <!-- Base application theme. -->
     <style name="AppTheme" parent="android:Theme.NoTitleBar.Fullscreen">
-        <!-- Customize your theme here. -->
+        <!-- Branded loading screen shown until the first game frame (covers the
+             first-run asset extraction instead of a black screen). -->
+        <item name="android:windowBackground">@drawable/splash</item>
     </style>
 </resources>
