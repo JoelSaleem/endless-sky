@@ -13,7 +13,7 @@ PKG=io.github.endless_sky.endless_sky
 TAR=/tmp/es-assets.tar
 
 echo "packing assets..."
-tar cf "$TAR" -C "$ES" data images sounds shaders credits.txt
+tar cf "$TAR" -C "$ES" data images sounds shaders credits.txt keys.txt
 echo "pushing $(du -h "$TAR" | cut -f1) to device..."
 adb push "$TAR" /data/local/tmp/es-assets.tar >/dev/null
 adb shell chmod 0644 /data/local/tmp/es-assets.tar
