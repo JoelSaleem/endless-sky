@@ -35,6 +35,15 @@ android {
 
     lint { abortOnError false }
 
+    androidResources {
+        // Endless Sky keeps data under underscore-prefixed dirs (data/_ui, data/_deprecated).
+        // AGP's default ignoreAssetsPattern includes the "<dir>_*" token, which drops every
+        // underscore-prefixed directory during asset merge -- silently stripping message
+        // categories, interfaces, flight checks etc. from the APK and crashing at runtime.
+        // Same list as the default, minus "<dir>_*", so those dirs are packaged.
+        ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+    }
+
     // Bundled game assets live under build/gameassets (populated by bundleGameAssets).
     sourceSets {
         main { assets.srcDirs += ["${buildDir}/gameassets"] }

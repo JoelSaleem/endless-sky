@@ -103,8 +103,15 @@ namespace {
 	// unpacked to a real directory once.
 	void ExtractAndroidAssets(const filesystem::path &dest)
 	{
-		if(filesystem::exists(dest / "credits.txt"))
-			return; // Already extracted (or dev-pushed).
+		// Skip only if a *completed* extraction left this marker. It is written
+		// after the whole file list is unpacked (see below), unlike a bundled file
+		// such as credits.txt which is written mid-list: checking one of those would
+		// permanently skip a partial/interrupted extraction, leaving a data set that
+		// is missing files (e.g. message categories) and crashes later. A missing
+		// marker makes an interrupted extraction retry on the next launch.
+		const filesystem::path marker = dest / ".assets-extracted";
+		if(filesystem::exists(marker))
+			return;
 		SDL_RWops *listFile = SDL_RWFromFile("es/filelist.txt", "rb");
 		if(!listFile)
 		{
@@ -140,6 +147,10 @@ namespace {
 			ofstream(out, ios::binary).write(data.data(), data.size());
 			++count;
 		}
+		// Mark completion only now that every file is unpacked.
+		error_code ec;
+		filesystem::create_directories(dest, ec);
+		ofstream(marker, ios::binary).put('\n');
 		Logger::Log("Android: extracted " + to_string(count) + " asset files to internal storage.",
 			Logger::Level::INFO);
 	}

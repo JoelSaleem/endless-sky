@@ -104,14 +104,19 @@ const string &Message::Category::TrueName() const
 
 const Color &Message::Category::MainColor() const
 {
-	return *mainColor;
+	// A category can be referenced before (or without) being fully defined, leaving
+	// its color empty. Dereferencing an empty ExclusiveItem is undefined behavior
+	// (a null deref), so fall back to a visible default instead of crashing.
+	static const Color fallback;
+	return mainColor ? *mainColor : fallback;
 }
 
 
 
 const Color &Message::Category::LogColor() const
 {
-	return *logColor;
+	static const Color fallback;
+	return logColor ? *logColor : fallback;
 }
 
 

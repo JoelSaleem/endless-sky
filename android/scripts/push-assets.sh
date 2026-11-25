@@ -21,7 +21,7 @@ adb shell chmod 0644 /data/local/tmp/es-assets.tar
 echo "extracting into internal storage (run-as)..."
 adb shell run-as "$PKG" rm -rf files/assets
 adb shell run-as "$PKG" mkdir -p files/assets
-adb shell "run-as $PKG sh -c 'cd files/assets && tar xf /data/local/tmp/es-assets.tar'"
+adb shell "run-as $PKG sh -c 'cd files/assets && tar xf /data/local/tmp/es-assets.tar && : > .assets-extracted'"
 adb shell rm -f /data/local/tmp/es-assets.tar
 rm -f "$TAR"
 
