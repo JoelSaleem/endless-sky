@@ -26,14 +26,14 @@ Recon of upstream substantially de-risks rendering:
 
 ## Architecture / approach
 1. **App shell** — SDL2's official `android-project` Gradle template (provides `SDLActivity` Java glue, `AndroidManifest.xml`, Gradle skeleton, and `externalNativeBuild` → CMake). The ES engine builds as the native shared lib SDLActivity loads. Don't hand-roll the Java/activity layer.
-2. **Native build** — Endless Sky's own `CMakeLists.txt` driven via the NDK toolchain with `ES_GLES=ON`, `ES_USE_VCPKG=ON`. **ABI x86_64 first** (emulator, fast iteration); add `arm64-v8a` once green.
-3. **Dependencies** — via vcpkg **android triplets** (`x64-android`, later `arm64-android`). `glew` dropped. Fallback for any dep lacking clean android-triplet support: build from source in the NDK tree or substitute. *Highest-risk step → validated first.*
-4. **Assets** — bundle small `shaders/` + `data/` into APK `assets/`; `adb push` large `images/` + `sounds/` into app storage for dev. Repoint ES's resource/config path resolution at the Android locations (SDL_RWops / AAssetManager or a first-run extract). Revisit Play Asset Delivery post-milestone.
+2. **Native build** — Endless Sky's own `CMakeLists.txt` driven via the NDK toolchain with `ES_GLES=ON`. **ABI arm64-v8a** (this Mac is Apple Silicon → the emulator image *and* real devices are arm64-v8a, so one ABI covers both).
+3. **Dependencies** — SDL2 built from source in-tree (so the Java glue matches the native lib); the rest via vcpkg **`arm64-android`** (libpng, libjpeg-turbo, libavif, openal-soft, libmad, libflac, minizip). `glew` dropped. Fallback for any dep lacking clean android-triplet support: build from source in the NDK tree, or defer (audio/avif) / substitute. *Highest-risk step → validated first.*
+4. **Assets** — for dev, `adb push` all resources (`data/ images/ sounds/ shaders/ credits.txt`) to the app's files dir and point ES's `resources` path there — works unchanged with ES's `std::filesystem` file code (no SDL_RWops/AAsset rewrite). APK bundling / first-run extraction / Play Asset Delivery come later.
 5. **Input** — baseline: enable SDL touch→mouse emulation so the existing click-driven UI works immediately; then layer real touch gestures (pan/pinch map, drag) on top.
 6. **UI (phone-landscape first pass)** — relax the 1024×768 floor; apply a phone-appropriate UI scale (ES already has UI zoom + HiDPI in `Screen`); enlarge hit targets on the **flight HUD + radar + map/landing** only; lock landscape orientation.
 
 ## Milestone-1 definition of done
-APK installs on the x86_64 emulator, launches, loads game data, renders the main menu + flight view via GLES, and the player can **tap-navigate menus, fly, land, and open the map** by touch, with the core HUD/map legibly touch-sized in phone landscape.
+APK installs on the arm64-v8a emulator, launches, loads game data, renders the main menu + flight view via GLES, and the player can **tap-navigate menus, fly, land, and open the map** by touch, with the core HUD/map legibly touch-sized in phone landscape.
 
 ## Internal build sequence
 1. **Emulator smoke** — confirm an AVD boots + renders GL in this environment (GUI risk; fallback `emulator -no-window` + `adb exec-out screencap`).
