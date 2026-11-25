@@ -260,12 +260,17 @@ int main(int argc, char *argv[])
 			return 1;
 
 #ifdef __ANDROID__
-		// First-pass touch UX: the desktop-scale UI is tiny on a phone screen.
-		// Bump the default UI zoom unless the player has already chosen their own.
+		// Touch UX: the desktop-scale UI is tiny on a phone. Default to a larger UI
+		// zoom (up to 150%), but cap it so the logical screen stays tall enough
+		// (>= 768px) for dense panels -- otherwise controls like the spaceport's
+		// Depart button get clipped off-screen. Respect a zoom the player set.
 		// noEvent=true: custom SDL events aren't registered this early (matches the
 		// startup SetZoom call in Preferences::Load).
 		if(Screen::UserZoom() <= 100)
-			Screen::SetZoom(200, true);
+		{
+			int fitZoom = (GameWindow::Height() * 100 / 768) / 10 * 10;
+			Screen::SetZoom(max(100, min(150, fitZoom)), true);
+		}
 #endif
 
 		GameData::LoadSettings();
