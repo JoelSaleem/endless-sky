@@ -47,6 +47,10 @@ public:
 	static bool IsMaximized();
 	static bool IsFullscreen();
 	static void ToggleFullscreen();
+	// Fast-forward toggle, used by on-screen touch controls (keyboard fast-forward is
+	// handled directly in the main loop). The main loop ORs this into its state.
+	static void ToggleFastForward();
+	static bool IsFastForward();
 	static void ToggleBlockScreenSaver();
 
 	// Print the error message in the terminal, error file, and message box.

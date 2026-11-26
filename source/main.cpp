@@ -476,9 +476,12 @@ void GameLoop(PlayerInfo &player, TaskQueue &queue, const Conversation &conversa
 		}
 
 		// Special case: If fastforward is on capslock, update on mod state and not
-		// on keypress.
+		// on keypress. Also OR in the on-screen (touch) toggle, since a touchscreen
+		// has no caps-lock key.
 		if(fastForwardSyncToCapsLock)
-			isFastForward = SDL_GetModState() & KMOD_CAPS;
+			isFastForward = (SDL_GetModState() & KMOD_CAPS) || GameWindow::IsFastForward();
+		else
+			isFastForward = isFastForward || GameWindow::IsFastForward();
 	};
 
 	// Game loop when running the game normally.

@@ -88,6 +88,8 @@ public:
 	void Go();
 	// Whether the player has the game paused.
 	bool IsPaused() const;
+	// Toggle the paused state (used by the keyboard Pause command and touch controls).
+	void TogglePause();
 
 	// Give a command on behalf of the player, used for integration tests.
 	void GiveCommand(const Command &command);

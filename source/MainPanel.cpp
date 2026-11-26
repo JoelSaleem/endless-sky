@@ -22,6 +22,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 #include "DialogPanel.h"
 #include "text/Format.h"
 #include "GameData.h"
+#include "GameWindow.h"
 #include "Information.h"
 #include "Interface.h"
 #include "Rectangle.h"
@@ -329,6 +330,18 @@ bool MainPanel::Click(int x, int y, MouseButton button, int clicks)
 	// zones (Map/Land/Jump/Target) are consumed before Click() is reached.
 	const Interface *combat = GameData::Interfaces().Get("touch combat");
 	const Point touch(x, y);
+	// Tap-to-toggle controls (pause / fast-forward). Fast-forward lives in the main
+	// loop, which ORs in GameWindow's flag; pause lives in the Engine.
+	if(combat->GetBox("pause").Contains(touch))
+	{
+		engine.TogglePause();
+		return true;
+	}
+	if(combat->GetBox("fastforward").Contains(touch))
+	{
+		GameWindow::ToggleFastForward();
+		return true;
+	}
 	if(combat->GetBox("fire").Contains(touch))
 	{
 		fireHeld = true;

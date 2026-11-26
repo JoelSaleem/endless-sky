@@ -43,6 +43,7 @@ namespace {
 	int drawWidth = 0;
 	int drawHeight = 0;
 	bool supportsAdaptiveVSync = false;
+	bool fastForward = false;
 
 	// Logs SDL errors and returns true if found
 	bool checkSDLerror()
@@ -520,6 +521,20 @@ void GameWindow::ToggleFullscreen()
 	}
 	else
 		SDL_SetWindowFullscreen(mainWindow, SDL_WINDOW_FULLSCREEN_DESKTOP);
+}
+
+
+
+void GameWindow::ToggleFastForward()
+{
+	fastForward = !fastForward;
+}
+
+
+
+bool GameWindow::IsFastForward()
+{
+	return fastForward;
 }
 
 

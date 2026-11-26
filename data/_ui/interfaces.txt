@@ -1262,24 +1262,42 @@ interface "touch combat"
 	button w "_Select"
 		center -435 -51
 		dimensions 160 50
+	# Pause and fast-forward are tap-to-toggle boxes (hit-tested in MainPanel::Click),
+	# not button zones: pause toggles Engine time, fast-forward toggles the main loop.
+	sprite "ui/very wide button"
+		center -435 -113
+	label "Pause"
+		center -435 -113
+		align center
+	box "pause"
+		center -435 -113
+		dimensions 160 50
+	sprite "ui/very wide button"
+		center -435 -175
+	label "Fast >>"
+		center -435 -175
+		align center
+	box "fastforward"
+		center -435 -175
+		dimensions 160 50
 	# Deploy / recall fighters -- only shown if the flagship has fighter bays.
 	visible if "has bays"
 	sprite "ui/very wide button"
-		center -435 -113
+		center -435 -237
 	button d "_Deploy"
-		center -435 -113
+		center -435 -237
 		dimensions 160 50
 	# Fleet orders -- only shown if the player has escorts.
 	visible if "has escorts"
 	sprite "ui/very wide button"
-		center -435 -175
+		center -435 -299
 	button g "_Gather"
-		center -435 -175
+		center -435 -299
 		dimensions 160 50
 	sprite "ui/very wide button"
-		center -435 -237
+		center -435 -361
 	button h "_Hold"
-		center -435 -237
+		center -435 -361
 		dimensions 160 50
 
 

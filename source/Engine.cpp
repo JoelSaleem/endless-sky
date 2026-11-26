@@ -1167,6 +1167,18 @@ bool Engine::IsPaused() const
 
 
 
+void Engine::TogglePause()
+{
+	timePaused = !timePaused;
+	if(timePaused)
+		Audio::Pause();
+	else
+		Audio::Resume();
+	UI::PlaySound(UI::UISound::NORMAL);
+}
+
+
+
 // Give a command on behalf of the player, used for integration tests.
 void Engine::GiveCommand(const Command &command)
 {
@@ -2292,14 +2304,7 @@ void Engine::HandleKeyboardInputs()
 		activeCommands |= Command::AUTOSTEER;
 
 	if(keyDown.Has(Command::PAUSE))
-	{
-		timePaused = !timePaused;
-		if(timePaused)
-			Audio::Pause();
-		else
-			Audio::Resume();
-		UI::PlaySound(UI::UISound::NORMAL);
-	}
+		TogglePause();
 }
 
 
