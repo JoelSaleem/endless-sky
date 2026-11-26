@@ -101,28 +101,45 @@ namespace {
 	// by android/app/build.gradle) to internal storage. Endless Sky reads data via
 	// std::filesystem and cannot read files packed inside the APK, so they must be
 	// unpacked to a real directory once.
+	// Read a bundled asset file (packed under es/) into a string; empty if missing.
+	string ReadApkAsset(const string &rel)
+	{
+		SDL_RWops *f = SDL_RWFromFile(("es/" + rel).c_str(), "rb");
+		if(!f)
+			return {};
+		Sint64 n = SDL_RWsize(f);
+		string data(max<Sint64>(0, n), '\0');
+		if(n > 0)
+			SDL_RWread(f, data.data(), 1, n);
+		SDL_RWclose(f);
+		return data;
+	}
+
 	void ExtractAndroidAssets(const filesystem::path &dest)
 	{
-		// Skip only if a *completed* extraction left this marker. It is written
-		// after the whole file list is unpacked (see below), unlike a bundled file
-		// such as credits.txt which is written mid-list: checking one of those would
-		// permanently skip a partial/interrupted extraction, leaving a data set that
-		// is missing files (e.g. message categories) and crashes later. A missing
-		// marker makes an interrupted extraction retry on the next launch.
-		const filesystem::path marker = dest / ".assets-extracted";
-		if(filesystem::exists(marker))
-			return;
-		SDL_RWops *listFile = SDL_RWFromFile("es/filelist.txt", "rb");
-		if(!listFile)
+		// Re-extract whenever the packaged asset signature (a "path:size" list produced
+		// by bundleGameAssets) differs from the one saved by the last completed
+		// extraction: this refreshes the data after an app update or dev rebuild that
+		// changed the bundled assets, and skips an unchanged APK. The signature is saved
+		// only after a *full* extraction, so a partial/interrupted one (missing or stale
+		// signature) is retried rather than permanently skipped.
+		const string signature = ReadApkAsset("assetsig.txt");
+		const filesystem::path marker = dest / ".assets-sig";
+		if(!signature.empty() && filesystem::exists(marker))
+		{
+			ifstream in(marker, ios::binary);
+			stringstream saved;
+			saved << in.rdbuf();
+			if(saved.str() == signature)
+				return;
+		}
+
+		const string listText = ReadApkAsset("filelist.txt");
+		if(listText.empty())
 		{
 			Logger::Log("Android: es/filelist.txt not found in APK assets.", Logger::Level::ERROR);
 			return;
 		}
-		Sint64 listSize = SDL_RWsize(listFile);
-		string listText(max<Sint64>(0, listSize), '\0');
-		if(listSize > 0)
-			SDL_RWread(listFile, listText.data(), 1, listSize);
-		SDL_RWclose(listFile);
 
 		istringstream lines(listText);
 		string rel;
@@ -147,10 +164,13 @@ namespace {
 			ofstream(out, ios::binary).write(data.data(), data.size());
 			++count;
 		}
-		// Mark completion only now that every file is unpacked.
+		// Mark completion only now that every file is unpacked, by saving the signature.
 		error_code ec;
 		filesystem::create_directories(dest, ec);
-		ofstream(marker, ios::binary).put('\n');
+		{
+			ofstream out(marker, ios::binary);
+			out.write(signature.data(), signature.size());
+		}
 		Logger::Log("Android: extracted " + to_string(count) + " asset files to internal storage.",
 			Logger::Level::INFO);
 	}

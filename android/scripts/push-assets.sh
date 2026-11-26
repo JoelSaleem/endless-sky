@@ -21,9 +21,20 @@ adb shell chmod 0644 /data/local/tmp/es-assets.tar
 echo "extracting into internal storage (run-as)..."
 adb shell run-as "$PKG" rm -rf files/assets
 adb shell run-as "$PKG" mkdir -p files/assets
-adb shell "run-as $PKG sh -c 'cd files/assets && tar xf /data/local/tmp/es-assets.tar && : > .assets-extracted'"
+adb shell "run-as $PKG sh -c 'cd files/assets && tar xf /data/local/tmp/es-assets.tar'"
 adb shell rm -f /data/local/tmp/es-assets.tar
 rm -f "$TAR"
+
+# Mark the pushed assets as the current build's set (.assets-sig) so the app uses them
+# instead of re-extracting the APK on top (see ExtractAndroidAssets in source/Files.cpp).
+SIG="$ES/android/app/build/gameassets/es/assetsig.txt"
+if [ -f "$SIG" ]; then
+	adb push "$SIG" /data/local/tmp/es-assetsig.txt >/dev/null
+	adb shell "run-as $PKG sh -c 'cp /data/local/tmp/es-assetsig.txt files/assets/.assets-sig'"
+	adb shell rm -f /data/local/tmp/es-assetsig.txt
+else
+	echo "warning: $SIG missing (run a build first); the app may re-extract over pushed assets"
+fi
 
 echo "verifying:"
 adb shell "run-as $PKG sh -c 'ls files/assets && printf \"credits head: \" && head -c 40 files/assets/credits.txt && echo'"

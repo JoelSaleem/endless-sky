@@ -63,12 +63,18 @@ tasks.register('bundleGameAssets', Copy) {
     from(root) { include 'credits.txt', 'keys.txt' }
     doLast {
         def base = file("${buildDir}/gameassets/es")
-        def sb = new StringBuilder()
+        def names = []
         base.eachFileRecurse { f ->
-            if(f.isFile() && f.name != 'filelist.txt')
-                sb.append(base.toPath().relativize(f.toPath()).toString().replace('\\', '/')).append('\n')
+            if(f.isFile() && f.name != 'filelist.txt' && f.name != 'assetsig.txt')
+                names << base.toPath().relativize(f.toPath()).toString().replace('\\', '/')
         }
-        new File(base, 'filelist.txt').text = sb.toString()
+        new File(base, 'filelist.txt').text = names.join('\n') + '\n'
+        // A signature of the packaged asset set (sorted "path:size"). The native
+        // extractor re-extracts whenever this differs from the extracted copy, so a
+        // new APK (app update or dev rebuild) with changed assets refreshes the data,
+        // while an unchanged APK is skipped. See ExtractAndroidAssets in Files.cpp.
+        def sig = names.collect { rel -> rel + ':' + new File(base, rel).length() }.sort()
+        new File(base, 'assetsig.txt').text = sig.join('\n') + '\n'
     }
 }
 preBuild.dependsOn bundleGameAssets
