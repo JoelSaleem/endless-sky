@@ -51,6 +51,8 @@ public:
 	// handled directly in the main loop). The main loop ORs this into its state.
 	static void ToggleFastForward();
 	static bool IsFastForward();
+	// Brief haptic tick for on-screen (touch) button presses. No-op off Android.
+	static void Vibrate();
 	static void ToggleBlockScreenSaver();
 
 	// Print the error message in the terminal, error file, and message box.

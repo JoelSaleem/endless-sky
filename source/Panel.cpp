@@ -21,6 +21,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 #include "shader/FillShader.h"
 #include "text/Format.h"
 #include "GameData.h"
+#include "GameWindow.h"
 #include "Point.h"
 #include "Preferences.h"
 #include "Screen.h"
@@ -139,6 +140,8 @@ bool Panel::ZoneClick(const Point &point)
 			// click has broken it out of that mode, so it doesn't interpret a
 			// button press and a text character entered.
 			EndEditing();
+			// Haptic tick for on-screen button taps (no-op off Android).
+			GameWindow::Vibrate();
 			zone.Click();
 			return true;
 		}

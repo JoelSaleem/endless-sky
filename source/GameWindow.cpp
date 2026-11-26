@@ -24,6 +24,9 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 
 #include "opengl.h"
 #include "SDL.h"
+#ifdef __ANDROID__
+#include <jni.h>
+#endif
 
 #include <cstring>
 #include <sstream>
@@ -535,6 +538,25 @@ void GameWindow::ToggleFastForward()
 bool GameWindow::IsFastForward()
 {
 	return fastForward;
+}
+
+
+
+void GameWindow::Vibrate()
+{
+#ifdef __ANDROID__
+	// Call MainActivity.vibrate() via JNI for a short haptic tick on touch presses.
+	JNIEnv *env = static_cast<JNIEnv *>(SDL_AndroidGetJNIEnv());
+	jobject activity = static_cast<jobject>(SDL_AndroidGetActivity());
+	if(!env || !activity)
+		return;
+	jclass cls = env->GetObjectClass(activity);
+	jmethodID method = env->GetStaticMethodID(cls, "vibrate", "()V");
+	if(method)
+		env->CallStaticVoidMethod(cls, method);
+	env->DeleteLocalRef(cls);
+	env->DeleteLocalRef(activity);
+#endif
 }
 
 

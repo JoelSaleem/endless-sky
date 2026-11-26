@@ -330,31 +330,25 @@ bool MainPanel::Click(int x, int y, MouseButton button, int clicks)
 	// zones (Map/Land/Jump/Target) are consumed before Click() is reached.
 	const Interface *combat = GameData::Interfaces().Get("touch combat");
 	const Point touch(x, y);
-	// Tap-to-toggle controls (pause / fast-forward). Fast-forward lives in the main
-	// loop, which ORs in GameWindow's flag; pause lives in the Engine.
+	// On-screen hold/toggle controls. Pause/fast-forward toggle (Engine / main loop);
+	// fire/secondary/afterburner are held while the finger stays down (see Step).
+	bool onControl = true;
 	if(combat->GetBox("pause").Contains(touch))
-	{
 		engine.TogglePause();
-		return true;
-	}
-	if(combat->GetBox("fastforward").Contains(touch))
-	{
+	else if(combat->GetBox("fastforward").Contains(touch))
 		GameWindow::ToggleFastForward();
-		return true;
-	}
-	if(combat->GetBox("fire").Contains(touch))
-	{
+	else if(combat->GetBox("fire").Contains(touch))
 		fireHeld = true;
-		return true;
-	}
-	if(combat->GetBox("secondary").Contains(touch))
-	{
+	else if(combat->GetBox("secondary").Contains(touch))
 		secondaryHeld = true;
-		return true;
-	}
-	if(combat->GetBox("afterburner").Contains(touch))
-	{
+	else if(combat->GetBox("afterburner").Contains(touch))
 		afterburnerHeld = true;
+	else
+		onControl = false;
+	if(onControl)
+	{
+		// Haptic tick for these box controls (the zone buttons tick via Panel::ZoneClick).
+		GameWindow::Vibrate();
 		return true;
 	}
 	thrustHeld = true;

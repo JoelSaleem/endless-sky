@@ -1,7 +1,11 @@
 package io.github.endless_sky.endless_sky;
 
+import android.content.Context;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -87,5 +91,19 @@ public class MainActivity extends SDLActivity {
                 }
             }
         });
+    }
+
+    /** Called from native code for a short haptic tick on on-screen button presses. */
+    public static void vibrate() {
+        final MainActivity activity = instance;
+        if (activity == null)
+            return;
+        Vibrator vibrator = (Vibrator) activity.getSystemService(Context.VIBRATOR_SERVICE);
+        if (vibrator == null || !vibrator.hasVibrator())
+            return;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            vibrator.vibrate(VibrationEffect.createOneShot(15, VibrationEffect.DEFAULT_AMPLITUDE));
+        else
+            vibrator.vibrate(15);
     }
 }
