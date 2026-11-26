@@ -1252,6 +1252,35 @@ interface "touch combat"
 	box "fire"
 		center -265 -51
 		dimensions 160 50
+	# Third column (x -435): less-common commands. These are one-shot button zones
+	# (handled in MainPanel::KeyDown). Order matters: always-visible first, then the
+	# conditional groups, since "visible if" applies to following elements until the
+	# next "visible if". MainPanel sets the conditions when it draws this interface.
+	# Cycle which secondary weapon the Missile button fires ("w" -> Command::SELECT).
+	sprite "ui/very wide button"
+		center -435 -51
+	button w "_Select"
+		center -435 -51
+		dimensions 160 50
+	# Deploy / recall fighters -- only shown if the flagship has fighter bays.
+	visible if "has bays"
+	sprite "ui/very wide button"
+		center -435 -113
+	button d "_Deploy"
+		center -435 -113
+		dimensions 160 50
+	# Fleet orders -- only shown if the player has escorts.
+	visible if "has escorts"
+	sprite "ui/very wide button"
+		center -435 -175
+	button g "_Gather"
+		center -435 -175
+		dimensions 160 50
+	sprite "ui/very wide button"
+		center -435 -237
+	button h "_Hold"
+		center -435 -237
+		dimensions 160 50
 
 
 interface "hud"

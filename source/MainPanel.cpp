@@ -190,7 +190,15 @@ void MainPanel::Draw()
 	// the left) overlaid on the flight view, drawn with this panel so the button
 	// elements register as clickable zones.
 	GameData::Interfaces().Get("touch controls")->Draw(Information(), this);
-	GameData::Interfaces().Get("touch combat")->Draw(Information(), this);
+	// The combat interface's situational buttons (Deploy/Gather/Hold) are shown only
+	// when relevant, via conditions set here.
+	Information combatInfo;
+	if(const Ship *flagship = player.Flagship())
+		if(flagship->HasBays())
+			combatInfo.SetCondition("has bays");
+	if(player.Ships().size() > 1)
+		combatInfo.SetCondition("has escorts");
+	GameData::Interfaces().Get("touch combat")->Draw(combatInfo, this);
 #endif
 
 	if(isDragging)
@@ -260,7 +268,8 @@ bool MainPanel::KeyDown(SDL_Keycode key, Uint16 mod, const Command &command, boo
 
 	if(derived.Has(Command::MAP | Command::INFO | Command::MESSAGE_LOG | Command::HAIL | Command::HELP))
 		show = derived;
-	else if(!command && derived.Has(Command::LAND | Command::JUMP | Command::NEAREST))
+	else if(!command && derived.Has(Command::LAND | Command::JUMP | Command::NEAREST
+			| Command::SELECT | Command::DEPLOY | Command::GATHER | Command::HOLD_POSITION))
 		// Flight commands are read from the keyboard by the Engine; an on-screen
 		// button holds no key, so inject it directly for this frame.
 		engine.GiveCommand(derived);
