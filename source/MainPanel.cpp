@@ -133,9 +133,14 @@ void MainPanel::Step()
 	// thrust (no keyboard), so inject the forward command each frame it's held.
 	if(isActive && thrustHeld)
 		engine.GiveCommand(Command::FORWARD);
-	// ...and fire primary weapons while the on-screen Fire button is held.
+	// ...and fire weapons / afterburn while the matching on-screen button is held.
+	// Boost injects forward thrust too, since the afterburner only fires while thrusting.
 	if(isActive && fireHeld)
 		engine.GiveCommand(Command::PRIMARY);
+	if(isActive && secondaryHeld)
+		engine.GiveCommand(Command::SECONDARY);
+	if(isActive && afterburnerHeld)
+		engine.GiveCommand(Command::FORWARD | Command::AFTERBURNER);
 #endif
 
 	engine.Step(isActive);
@@ -166,6 +171,8 @@ void MainPanel::Step()
 		canDrag = false;
 		thrustHeld = false;
 		fireHeld = false;
+		secondaryHeld = false;
+		afterburnerHeld = false;
 	}
 	canClick = isActive;
 }
@@ -308,12 +315,24 @@ bool MainPanel::Click(int x, int y, MouseButton button, int clicks)
 	// Only allow drags that start when clicking was possible.
 	canDrag = true;
 #ifdef __ANDROID__
-	// A press on the (non-zone) Fire button means hold-to-fire; a press anywhere else
+	// A press on one of the (non-zone) hold buttons fires/boosts; a press anywhere else
 	// in the flight view means "fly toward here" (hold-to-thrust). On-screen *button*
 	// zones (Map/Land/Jump/Target) are consumed before Click() is reached.
-	if(GameData::Interfaces().Get("touch combat")->GetBox("fire").Contains(Point(x, y)))
+	const Interface *combat = GameData::Interfaces().Get("touch combat");
+	const Point touch(x, y);
+	if(combat->GetBox("fire").Contains(touch))
 	{
 		fireHeld = true;
+		return true;
+	}
+	if(combat->GetBox("secondary").Contains(touch))
+	{
+		secondaryHeld = true;
+		return true;
+	}
+	if(combat->GetBox("afterburner").Contains(touch))
+	{
+		afterburnerHeld = true;
 		return true;
 	}
 	thrustHeld = true;
@@ -351,9 +370,11 @@ bool MainPanel::Release(int x, int y, MouseButton button)
 		return false;
 
 #ifdef __ANDROID__
-	// Finger lifted: stop thrusting/firing (see Click/Step).
+	// Finger lifted: stop thrusting/firing/boosting (see Click/Step).
 	thrustHeld = false;
 	fireHeld = false;
+	secondaryHeld = false;
+	afterburnerHeld = false;
 #endif
 
 	if(isDragging)
@@ -561,9 +582,16 @@ bool MainPanel::ShowHelp(bool force)
 	// Check if any help messages should be shown.
 	if(Preferences::Has(Preferences::MOUSE_CONTROL_FLAGSHIP))
 	{
+#ifdef __ANDROID__
+		// The mouse help describes keyboard/mouse controls; on touch show the
+		// touch-specific version instead (see data/_ui/help.txt).
+		const char *const flyHelp = "control ship with touch";
+#else
+		const char *const flyHelp = "control ship with mouse";
+#endif
 		if(force)
-			forced.push_back("control ship with mouse");
-		else if(DoHelp("control ship with mouse"))
+			forced.push_back(flyHelp);
+		else if(DoHelp(flyHelp))
 			return true;
 	}
 	if(flagship->IsTargetable())
