@@ -93,4 +93,6 @@ private:
 	bool canDrag = false;
 	// Android: true while a finger is held in the flight view, to thrust toward it.
 	bool thrustHeld = false;
+	// Android: true while a finger is held on the on-screen Fire button.
+	bool fireHeld = false;
 };

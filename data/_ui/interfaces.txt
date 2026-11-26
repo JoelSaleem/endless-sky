@@ -1215,6 +1215,27 @@ interface "touch controls"
 		dimensions 160 50
 
 
+# Combat controls, anchored bottom-left (opposite the nav buttons).
+interface "touch combat"
+	anchor bottom left
+	# Target nearest hostile ship (one-shot; the "r" key maps to Command::NEAREST).
+	sprite "ui/very wide button"
+		center 95 -113
+	button r "_Target"
+		center 95 -113
+		dimensions 160 50
+	# Hold to fire primary weapons. Deliberately NOT a button zone: MainPanel hit-tests
+	# the "fire" box and injects the primary command for as long as the finger is held.
+	sprite "ui/very wide button"
+		center 95 -51
+	label "Fire"
+		center 95 -51
+		align center
+	box "fire"
+		center 95 -51
+		dimensions 160 50
+
+
 interface "hud"
 	# Player status.
 	anchor top right

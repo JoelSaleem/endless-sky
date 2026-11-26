@@ -24,6 +24,7 @@ this program. If not, see <https://www.gnu.org/licenses/>.
 #include "GameData.h"
 #include "Information.h"
 #include "Interface.h"
+#include "Rectangle.h"
 #include "Government.h"
 #include "HailPanel.h"
 #include "shader/LineShader.h"
@@ -132,6 +133,9 @@ void MainPanel::Step()
 	// thrust (no keyboard), so inject the forward command each frame it's held.
 	if(isActive && thrustHeld)
 		engine.GiveCommand(Command::FORWARD);
+	// ...and fire primary weapons while the on-screen Fire button is held.
+	if(isActive && fireHeld)
+		engine.GiveCommand(Command::PRIMARY);
 #endif
 
 	engine.Step(isActive);
@@ -161,6 +165,7 @@ void MainPanel::Step()
 	{
 		canDrag = false;
 		thrustHeld = false;
+		fireHeld = false;
 	}
 	canClick = isActive;
 }
@@ -174,9 +179,11 @@ void MainPanel::Draw()
 	engine.Draw();
 
 #ifdef __ANDROID__
-	// On-screen touch controls (Map/Land/Jump) overlaid on the flight view, drawn
-	// with this panel so the buttons register as clickable zones.
+	// On-screen touch controls (Map/Land/Jump nav on the right; Fire/Target combat on
+	// the left) overlaid on the flight view, drawn with this panel so the button
+	// elements register as clickable zones.
 	GameData::Interfaces().Get("touch controls")->Draw(Information(), this);
+	GameData::Interfaces().Get("touch combat")->Draw(Information(), this);
 #endif
 
 	if(isDragging)
@@ -246,7 +253,7 @@ bool MainPanel::KeyDown(SDL_Keycode key, Uint16 mod, const Command &command, boo
 
 	if(derived.Has(Command::MAP | Command::INFO | Command::MESSAGE_LOG | Command::HAIL | Command::HELP))
 		show = derived;
-	else if(!command && derived.Has(Command::LAND | Command::JUMP))
+	else if(!command && derived.Has(Command::LAND | Command::JUMP | Command::NEAREST))
 		// Flight commands are read from the keyboard by the Engine; an on-screen
 		// button holds no key, so inject it directly for this frame.
 		engine.GiveCommand(derived);
@@ -301,8 +308,14 @@ bool MainPanel::Click(int x, int y, MouseButton button, int clicks)
 	// Only allow drags that start when clicking was possible.
 	canDrag = true;
 #ifdef __ANDROID__
-	// A press that reaches the flight view (an on-screen button would have consumed
-	// it as a zone) means "fly toward here": hold to thrust until the finger lifts.
+	// A press on the (non-zone) Fire button means hold-to-fire; a press anywhere else
+	// in the flight view means "fly toward here" (hold-to-thrust). On-screen *button*
+	// zones (Map/Land/Jump/Target) are consumed before Click() is reached.
+	if(GameData::Interfaces().Get("touch combat")->GetBox("fire").Contains(Point(x, y)))
+	{
+		fireHeld = true;
+		return true;
+	}
 	thrustHeld = true;
 #endif
 
@@ -338,8 +351,9 @@ bool MainPanel::Release(int x, int y, MouseButton button)
 		return false;
 
 #ifdef __ANDROID__
-	// Finger lifted: stop thrusting (see Click/Step).
+	// Finger lifted: stop thrusting/firing (see Click/Step).
 	thrustHeld = false;
+	fireHeld = false;
 #endif
 
 	if(isDragging)
