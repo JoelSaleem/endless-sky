@@ -239,7 +239,13 @@ void Preferences::Init()
 	settings[ASTEROID_TARGETING] = Setting::List("Asteroid targeting", {"proximity", "expected value", "quality"}, 0,
 		true);
 	settings[AUTO_AIM] = Setting::List("Automatic aiming", {"off", "always on", "when firing"}, 2);
+#ifdef __ANDROID__
+	// Touch has no easy "fire" control, so default to auto-firing at hostiles; combat
+	// is otherwise impossible on a touchscreen. Players can still change this.
+	settings[AUTO_FIRE] = Setting::List("Automatic firing", {"off", "on", "guns only", "turrets only"}, 1);
+#else
 	settings[AUTO_FIRE] = Setting::List("Automatic firing", {"off", "on", "guns only", "turrets only"}, 0);
+#endif
 	settings[AUTO_UNPARK_FLAGSHIP] = Setting::OnOff("Automatically unpark flagship", false);
 
 	settings[BLOCK_SCREEN_SAVER] = Setting::OnOff("Block screen saver", false);

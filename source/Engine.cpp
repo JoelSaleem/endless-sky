@@ -2436,6 +2436,9 @@ void Engine::HandleMouseClicks()
 	}
 
 	// Treat an "empty" click as a request to clear targets and selections.
+#ifndef __ANDROID__
+	// On Android an empty-space tap is a "fly toward here" gesture (hold-to-thrust),
+	// not a deselect, so keep the current target instead of clearing it on every tap.
 	if(!clickTarget && mouseButton == MouseButton::LEFT && !clickedAsteroid && !clickedPlanet)
 	{
 		// Setting the target ship also resets the target asteroid.
@@ -2444,6 +2447,7 @@ void Engine::HandleMouseClicks()
 			flagship->SetTargetStellar(nullptr);
 		player.ClearSelectedEscorts();
 	}
+#endif
 }
 
 
